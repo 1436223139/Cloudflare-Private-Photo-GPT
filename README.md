@@ -235,7 +235,7 @@ Flow Album 采用前后端分离的架构设计，前端使用 React + TypeScrip
 
 | 绑定 | 必填 | 变量名称 | 示例值 |
 |--------|------|------|------|
-| 存储桶 | ✅ | R2存储桶名称 | R2 |
+| 存储桶 | ✅ | R2 | private-bucket |
 | KV空间 | ✅(生产环境必填) | RATE_LIMIT_KV | rate-limit-kv |
 
 ```bash
