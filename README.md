@@ -231,6 +231,8 @@ Flow Album 采用前后端分离的架构设计，前端使用 React + TypeScrip
 | RATE_LIMIT_WINDOW_MS | ❌ | number | 限制窗口(毫秒) | 60000 |
 | EDGE_CACHE_TTL | ❌ | number | CDN缓存时间 | 86400 |
 
+### Pages 函数说明
+
 | 绑定 | 必填 | 变量名称 | 示例值 |
 | 存储桶 | ✅ | R2存储桶名称 | R2 |
 | KV空间 | ✅(生产环境必填) | RATE_LIMIT_KV | rate-limit-kv |
