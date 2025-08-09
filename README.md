@@ -224,6 +224,7 @@ Flow Album 采用前后端分离的架构设计，前端使用 React + TypeScrip
 | PASSWORD | ✅ | string | 登录密码 | your-strong-password |
 | JWT_SECRET | ✅ | string | JWT签名密钥(最少32位，可更长更安全) | 随机字符串 |
 | R2_BUCKET_NAME | ✅ | string | R2存储桶名称 | my-photo-bucket |
+| RATE_LIMIT_KV | ✅ | string | 速率限制KV命名空间(生产环境必填) | rate-limit-kv |
 | JWT_EXPIRES_IN | ❌ | number | 令牌有效期(秒) | 3600 |
 | MAX_STORAGE_BYTES | ❌ | number | 最大存储空间(字节) | 6442450944 |
 | MAX_FILE_SIZE_BYTES | ❌ | number | 单个文件最大大小(字节) | 52428800 |
@@ -250,9 +251,34 @@ RATE_LIMIT_REQUESTS="10"  # 每分钟请求数限制
 RATE_LIMIT_WINDOW_MS="60000"  # 限制窗口(毫秒)
 ```
 
-3. **绑定R2存储桶**
-   - 在 Pages 项目设置中
-   - 添加绑定: 变量名 `R2`, 选择你的R2存储桶
+3. **绑定存储服务**
+   - R2存储桶绑定（必填）：
+     - 变量名: `R2` (必须全大写)
+     - 在Cloudflare控制台创建或选择现有的R2存储桶
+     - 确保存储桶权限设置为"公开读取"（如果允许公开访问）
+   - KV命名空间绑定（生产环境必填）：
+     - 变量名: `RATE_LIMIT_KV` (必须全大写)
+     - 在Cloudflare控制台创建KV命名空间：
+       1. Workers & Pages → KV → 创建命名空间
+       2. 输入名称如"rate-limit-kv"
+       3. 复制命名空间ID
+     - 在Pages项目设置中添加绑定
+     - 注意：KV命名空间创建后需要5-10分钟才能生效
+   - 绑定完成后需要重新部署生效
+   - 验证绑定是否成功：
+     ```bash
+     # 检查R2绑定
+     curl -I https://your-project.pages.dev/api/health | grep R2
+     
+     # 检查KV绑定
+     curl -I https://your-project.pages.dev/api/health | grep KV
+     ```
+     
+   - **KV绑定详细说明**：
+     - KV命名空间用于存储速率限制计数器
+     - 每个KV命名空间每月有100,000次免费读写操作
+     - 生产环境建议至少绑定一个KV命名空间
+     - 如需更高性能，可创建多个KV命名空间分区
 
 4. **部署验证**
 ```bash
@@ -306,6 +332,28 @@ openssl rand -base64 64
 - 检查R2存储桶权限
 - 验证文件类型和大小限制
 - 检查JWT令牌是否有效
+
+**Q: KV命名空间有什么作用?**
+- 存储速率限制计数器
+- 记录用户操作频率
+- 防止暴力破解和DDoS攻击
+- 生产环境必须配置
+- 启用后可以：
+  - 限制每分钟登录尝试次数
+  - 控制API调用频率
+  - 防止恶意爬虫
+- 典型配置示例：
+  ```bash
+  # 限制每分钟10次登录尝试
+  RATE_LIMIT_REQUESTS=10
+  RATE_LIMIT_WINDOW_MS=60000
+  ```
+  
+**Q: KV命名空间性能如何?**
+- 读写延迟：<5ms (P99)
+- 吞吐量：10,000+ QPS
+- 持久性：99.999999999% (11个9)
+- 免费额度：每月100,000次读写操作
 
 **Q: 如何监控存储使用情况?**
 - 在Cloudflare控制台查看R2指标
