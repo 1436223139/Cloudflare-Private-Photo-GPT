@@ -222,7 +222,7 @@ Flow Album 采用前后端分离的架构设计，前端使用 React + TypeScrip
 |--------|------|------|------|--------|
 | USERNAME | ✅ | string | 登录用户名 | admin |
 | PASSWORD | ✅ | string | 登录密码 | your-strong-password |
-| JWT_SECRET | ✅ | string | JWT签名密钥 | 随机32位字符串 |
+| JWT_SECRET | ✅ | string | JWT签名密钥(最少32位，可更长更安全) | 随机字符串 |
 | R2_BUCKET_NAME | ✅ | string | R2存储桶名称 | my-photo-bucket |
 | JWT_EXPIRES_IN | ❌ | number | 令牌有效期(秒) | 3600 |
 | MAX_STORAGE_BYTES | ❌ | number | 最大存储空间(字节) | 6442450944 |
@@ -234,17 +234,17 @@ Flow Album 采用前后端分离的架构设计，前端使用 React + TypeScrip
 
 ```bash
 # 示例认证配置
-USERNAME="admin"  # 登录用户名(必填)，建议修改为自定义用户名
-PASSWORD="your-strong-password"  # 登录密码(必填)，建议使用复杂密码
-JWT_SECRET="32位以上随机字符串"  # JWT签名密钥(必填)，建议使用`openssl rand -base64 32`生成
+USERNAME="zhmouren"  # 登录用户名(必填)，建议修改为自定义用户名
+PASSWORD="SUK84@K0mOpd"  # 登录密码(必填)，建议使用复杂密码
+JWT_SECRET="IbQ%Uc_o2ibq04A&g*_#4l4tv12LMG8yotyI~vpU@P0MctkH5j"  # JWT签名密钥(必填)，建议使用`openssl rand -base64 32`生成
 JWT_EXPIRES_IN="3600"  # 令牌有效期(秒，默认3600即1小时)
 
-# 存储配置
-R2_BUCKET_NAME="your-bucket-name"  # R2存储桶名称
+# 示例存储配置
+R2_BUCKET_NAME="test"  # R2存储桶名称
 MAX_STORAGE_BYTES="6442450944"  # 最大存储空间(6GB)
 MAX_FILE_SIZE_BYTES="52428800"  # 单个文件最大大小(50MB)
 
-# 安全限制
+# 示例安全限制
 ALLOWED_FILE_TYPES="image/jpeg,image/png,image/gif,image/webp,video/mp4,video/webm,video/ogg"
 RATE_LIMIT_REQUESTS="10"  # 每分钟请求数限制
 RATE_LIMIT_WINDOW_MS="60000"  # 限制窗口(毫秒)
@@ -282,13 +282,24 @@ npm run build
 
 ### 常见问题
 
+**Q: JWT_SECRET的长度要求?**
+- 最少32位(256位加密安全要求)
+- 可以超过32位，更长的密钥更安全
+- 最大长度取决于具体JWT库实现(通常支持到512位)
+- 建议使用64位(512位)密钥以获得最佳安全性
+- 实际项目中推荐使用`openssl rand -base64 48`生成48位密钥(384位)
+
 **Q: 如何生成安全的JWT_SECRET?**
 ```bash
-# Linux/Mac
+# Linux/Mac (生成32位)
 openssl rand -base64 32
+# 生成64位
+openssl rand -base64 64
 
-# Windows PowerShell
+# Windows PowerShell (生成32位)
 [Convert]::ToBase64String((1..32 | ForEach-Object { Get-Random -Minimum 0 -Maximum 255 }))
+# 生成64位
+[Convert]::ToBase64String((1..64 | ForEach-Object { Get-Random -Minimum 0 -Maximum 255 }))
 ```
 
 **Q: 上传文件失败?**
