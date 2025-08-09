@@ -223,8 +223,6 @@ Flow Album 采用前后端分离的架构设计，前端使用 React + TypeScrip
 | USERNAME | ✅ | string | 登录用户名 | admin |
 | PASSWORD | ✅ | string | 登录密码 | your-strong-password |
 | JWT_SECRET | ✅ | string | JWT签名密钥(最少32位，可更长更安全) | 随机字符串 |
-| R2_BUCKET_NAME | ✅ | string | R2存储桶名称 | my-photo-bucket |
-| RATE_LIMIT_KV | ✅ | string | 速率限制KV命名空间(生产环境必填) | rate-limit-kv |
 | JWT_EXPIRES_IN | ❌ | number | 令牌有效期(秒) | 3600 |
 | MAX_STORAGE_BYTES | ❌ | number | 最大存储空间(字节) | 6442450944 |
 | MAX_FILE_SIZE_BYTES | ❌ | number | 单个文件最大大小(字节) | 52428800 |
@@ -232,6 +230,10 @@ Flow Album 采用前后端分离的架构设计，前端使用 React + TypeScrip
 | RATE_LIMIT_REQUESTS | ❌ | number | 速率限制请求数 | 10 |
 | RATE_LIMIT_WINDOW_MS | ❌ | number | 限制窗口(毫秒) | 60000 |
 | EDGE_CACHE_TTL | ❌ | number | CDN缓存时间 | 86400 |
+
+| 绑定 | 必填 | 变量名称 | 示例值 |
+| 存储桶 | ✅ | R2存储桶名称 | R2 |
+| KV空间 | ✅(生产环境必填) | RATE_LIMIT_KV | rate-limit-kv |
 
 ```bash
 # 示例认证配置
