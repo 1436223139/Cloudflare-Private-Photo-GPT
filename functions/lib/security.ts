@@ -113,6 +113,94 @@ function checkRateLimitMemory(
   return { allowed: true, resetTime: entry.resetTime, remaining: maxRequests - newCount };
 }
 
+// JWT 密钥类型
+interface JWTSecret {
+  alg: 'HS256' | 'HS512'
+  key: string
+}
+
+// JWT 载荷
+interface JWTPayload {
+  sub: string // 用户ID
+  iat: number // 签发时间
+  exp: number // 过期时间
+  [key: string]: any // 其他自定义声明
+}
+
+// 生成JWT
+export async function generateJWT(payload: Omit<JWTPayload, 'iat' | 'exp'>, secret: JWTSecret, expiresIn: number = 3600): Promise<string> {
+  const header = { alg: secret.alg, typ: 'JWT' }
+  const now = Math.floor(Date.now() / 1000)
+  const fullPayload = {
+    ...payload,
+    iat: now,
+    exp: now + expiresIn
+  }
+  
+  const encoder = new TextEncoder()
+  const headerBase64 = btoa(JSON.stringify(header))
+  const payloadBase64 = btoa(JSON.stringify(fullPayload))
+  const signatureInput = `${headerBase64}.${payloadBase64}`
+  
+  const key = await crypto.subtle.importKey(
+    'raw',
+    encoder.encode(secret.key),
+    { name: 'HMAC', hash: { name: `SHA-${secret.alg.slice(2)}` } },
+    false,
+    ['sign']
+  )
+  
+  const signature = await crypto.subtle.sign(
+    'HMAC',
+    key,
+    encoder.encode(signatureInput)
+  )
+  
+  const signatureBase64 = btoa(String.fromCharCode(...new Uint8Array(signature)))
+  return `${headerBase64}.${payloadBase64}.${signatureBase64}`
+}
+
+// 验证JWT
+export async function verifyJWT(token: string, secret: JWTSecret): Promise<JWTPayload | null> {
+  try {
+    const [headerBase64, payloadBase64, signatureBase64] = token.split('.')
+    if (!headerBase64 || !payloadBase64 || !signatureBase64) return null
+    
+    const header = JSON.parse(atob(headerBase64))
+    if (header.alg !== secret.alg) return null
+    
+    const encoder = new TextEncoder()
+    const key = await crypto.subtle.importKey(
+      'raw',
+      encoder.encode(secret.key),
+      { name: 'HMAC', hash: { name: `SHA-${secret.alg.slice(2)}` } },
+      false,
+      ['verify']
+    )
+    
+    const signatureInput = `${headerBase64}.${payloadBase64}`
+    const signature = Uint8Array.from(atob(signatureBase64), c => c.charCodeAt(0))
+    
+    const isValid = await crypto.subtle.verify(
+      'HMAC',
+      key,
+      signature,
+      encoder.encode(signatureInput)
+    )
+    
+    if (!isValid) return null
+    
+    const payload = JSON.parse(atob(payloadBase64)) as JWTPayload
+    const now = Math.floor(Date.now() / 1000)
+    
+    if (payload.exp < now) return null // 令牌已过期
+    
+    return payload
+  } catch (error) {
+    return null
+  }
+}
+
 // 验证文件类型
 export function isAllowedFileType(fileType: string, allowedTypes: string): boolean {
   if (!allowedTypes) return true; // 如果没有设置限制，则允许所有类型

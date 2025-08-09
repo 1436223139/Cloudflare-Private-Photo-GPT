@@ -308,13 +308,12 @@ const App: React.FC = () => {
   const totalPages = Math.ceil(filteredMedia.length / itemsPerPage);
 
   // API 调用
-  const loadMedia = async (pwd?: string, usrname?: string) => {
+  const loadMedia = async () => {
+    const token = localStorage.getItem('jwtToken');
     const headers: Record<string, string> = {};
     
-    // 如果提供了用户名和密码，则添加到请求头
-    if (pwd && usrname) {
-      headers['x-password'] = pwd;
-      headers['x-username'] = usrname;
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
     }
     
     const res = await fetch('/api/list', {
@@ -383,7 +382,9 @@ const App: React.FC = () => {
       if (response.ok) {
         const data = await response.json();
         if (data.success) {
-          const success = await loadMedia(password, username);
+          // 存储JWT令牌
+          localStorage.setItem('jwtToken', data.token);
+          const success = await loadMedia();
           if (success) {
             setIsLoggedIn(true);
             setIsGuest(false);
@@ -408,11 +409,10 @@ const App: React.FC = () => {
       setIsLoggedIn(false);
     }
   };
-
   const handleUpload = async () => {
-    // 访客模式下不能上传
+    // 访容模式下不能上传
     if (isGuest) {
-      alert('访客模式下无法上传文件，请登录后操作');
+      alert('访容模式下无法上传文件，请登录后操作');
       return;
     }
     
@@ -422,22 +422,26 @@ const App: React.FC = () => {
     form.append('file', file);
     form.append('path', uploadPath);
     
+    const token = localStorage.getItem('jwtToken');
+    const headers: Record<string, string> = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    
     try {
       const res = await fetch('/api/upload', {
         method: 'POST',
         body: form,
-        headers: { 
-          'x-password': password,
-          'x-username': username
-        }
+        headers
       });
       
       if (res.status === 401) {
-        alert('用户名或密码已失效，请重新登录');
+        alert('认证已失效，请重新登录');
         setIsLoggedIn(false);
         setIsGuest(false);
         setPassword('');
         setUsername('');
+        localStorage.removeItem('jwtToken');
         return;
       }
       
@@ -455,7 +459,7 @@ const App: React.FC = () => {
       
       setFile(null);
       if (inputRef.current) inputRef.current.value = '';
-      await loadMedia(password, username);
+      await loadMedia();
     } catch (error) {
       alert('上传失败，请重试');
     } finally {
@@ -484,11 +488,10 @@ const App: React.FC = () => {
       setDownloading(false);
     }
   };
-
   const handleDelete = async (mediaKey: string) => {
-    // 访客模式下不能删除
+    // 访容模式下不能删除
     if (isGuest) {
-      alert('访客模式下无法删除文件，请登录后操作');
+      alert('访容模式下无法删除文件，请登录后操作');
       return;
     }
     
@@ -496,22 +499,28 @@ const App: React.FC = () => {
     
     setDeleting(true);
     try {
+      const token = localStorage.getItem('jwtToken');
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json'
+      };
+      
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
       const res = await fetch(`/api/upload`, {
         method: 'DELETE',
-        headers: { 
-          'x-password': password,
-          'x-username': username,
-          'Content-Type': 'application/json'
-        },
+        headers,
         body: JSON.stringify({ key: mediaKey })
       });
       
       if (res.status === 401) {
-        alert('用户名或密码已失效，请重新登录');
+        alert('认证已失效，请重新登录');
         setIsLoggedIn(false);
         setIsGuest(false);
         setPassword('');
         setUsername('');
+        localStorage.removeItem('jwtToken');
         return;
       }
       
@@ -538,11 +547,10 @@ const App: React.FC = () => {
       setDeleting(false);
     }
   };
-
   const handleBatchDelete = async () => {
-    // 访客模式下不能批量删除
+    // 访容模式下不能批量删除
     if (isGuest) {
-      alert('访客模式下无法删除文件，请登录后操作');
+      alert('访容模式下无法删除文件，请登录后操作');
       return;
     }
     
@@ -555,22 +563,28 @@ const App: React.FC = () => {
     
     setDeleting(true);
     try {
+      const token = localStorage.getItem('jwtToken');
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json'
+      };
+      
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
       const res = await fetch(`/api/upload`, {
         method: 'DELETE',
-        headers: { 
-          'x-password': password,
-          'x-username': username,
-          'Content-Type': 'application/json'
-        },
+        headers,
         body: JSON.stringify({ keys: Array.from(selectedMedia) })
       });
       
       if (res.status === 401) {
-        alert('用户名或密码已失效，请重新登录');
+        alert('认证已失效，请重新登录');
         setIsLoggedIn(false);
         setIsGuest(false);
         setPassword('');
         setUsername('');
+        localStorage.removeItem('jwtToken');
         return;
       }
       
