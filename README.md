@@ -171,25 +171,6 @@ Flow Album 采用前后端分离的架构设计，前端使用 React + TypeScrip
 | npm | 包管理 |
 | VS Code | 代码编辑器 |
 
-## 🚀 快速部署
-
-### 必需配置
-```bash
-# 核心环境变量
-JWT_SECRET="32位加密密钥"
-STORAGE_ENCRYPTION_KEY="R2存储加密密钥"
-ADMIN_CREDENTIALS="加密后的管理员凭证"
-
-# 性能调优
-EDGE_CACHE_TTL="86400"  # 24小时缓存
-IMAGE_OPTIM_QUALITY="85" # 图片优化质量
-```
-
-### 一键部署
-```bash
-wrangler deploy --env production
-```
-
 ## 🔒 安全合规
 - GDPR数据保护合规
 - ISO 27001认证架构
@@ -216,150 +197,108 @@ wrangler deploy --env production
 3. 配置WAF防护规则
 4. 实施分级存储策略
 
-## 手动部署方案
+## 手动部署指南
 
-Flow Album 支持两种主要部署方案：Cloudflare Pages 和 Cloudflare Workers。推荐使用 Cloudflare Pages，因为它提供了更简单的配置和自动集成前后端功能。
-### 方案一：Cloudflare Pages（推荐）
+### Cloudflare Pages 部署 (推荐)
 
-#### 环境要求
+#### 1. 准备工作
 - Cloudflare 账户
-- 域名（可选，Cloudflare Pages 提供默认子域名）
-- R2 存储桶
+- GitHub/GitLab 代码仓库
+- R2 存储桶 (在 Cloudflare 控制台创建)
 
-#### 部署步骤
+#### 2. 部署步骤
 
-1. **创建 R2 存储桶**
-   ```bash
-   # 在 Cloudflare 控制台创建 R2 存储桶，名称任意，存量bucket也可以，例如 private-photo
-   ```
-2. **部署前端**
-   - 将代码推送到 GitHub/GitLab 等代码仓库
-   - 在 Cloudflare Pages 控制台连接代码仓库
-   - 设置构建配置：
-     - 构建命令: `cd frontend && npm ci && npm run build`
-     - 构建目录: `dist`
-     - 根目录: `/`
+1. **连接代码仓库**
+   - 在 Cloudflare Pages 控制台
+   - 选择你的代码仓库
+   - 设置构建命令: `cd frontend && npm ci && npm run build`
+   - 构建目录: `dist`
 
-3. **在 Cloudflare Pages 项目设置中配置以下环境变量：**
+2. **配置环境变量**
+
+### 环境变量说明
+
+| 变量名 | 必填 | 类型 | 说明 | 示例值 |
+|--------|------|------|------|--------|
+| USERNAME | ✅ | string | 登录用户名 | admin |
+| PASSWORD | ✅ | string | 登录密码 | your-strong-password |
+| JWT_SECRET | ✅ | string | JWT签名密钥 | 随机32位字符串 |
+| R2_BUCKET_NAME | ✅ | string | R2存储桶名称 | my-photo-bucket |
+| JWT_EXPIRES_IN | ❌ | number | 令牌有效期(秒) | 3600 |
+| MAX_STORAGE_BYTES | ❌ | number | 最大存储空间(字节) | 6442450944 |
+| MAX_FILE_SIZE_BYTES | ❌ | number | 单个文件最大大小(字节) | 52428800 |
+| ALLOWED_FILE_TYPES | ❌ | string | 允许的文件类型(MIME) | image/jpeg,image/png |
+| RATE_LIMIT_REQUESTS | ❌ | number | 速率限制请求数 | 10 |
+| RATE_LIMIT_WINDOW_MS | ❌ | number | 限制窗口(毫秒) | 60000 |
+| EDGE_CACHE_TTL | ❌ | number | CDN缓存时间 | 86400 |
 
 ```bash
----必选步骤-核心环节变量---：
-USERNAME="username" # 登录用户名，例如 "admin"
-PASSWORD="password" # 登录密码，建议使用复杂密码，如 "DFd@jTS2wJ3O"
-JWT_SECRET="JWfoJTp2b8ADB4SeIUtGmyhzj6HaUUIiXk98mU5F" # 32位以上随机字符串
-MAX_STORAGE_BYTES="6442450944" #最大存储空间（字节），例如 6442450944 表示6GB
-MAX_FILE_SIZE_BYTES="52428800" # 单个文件最大大小（字节），例如 52428800 表示50MB
+# 示例认证配置
+USERNAME="admin"  # 登录用户名(必填)，建议修改为自定义用户名
+PASSWORD="your-strong-password"  # 登录密码(必填)，建议使用复杂密码
+JWT_SECRET="32位以上随机字符串"  # JWT签名密钥(必填)，建议使用`openssl rand -base64 32`生成
+JWT_EXPIRES_IN="3600"  # 令牌有效期(秒，默认3600即1小时)
 
----可选步骤（建议部署）---：
-ALLOWED_FILE_TYPES="image/jpeg,image/png,image/gif,image/webp,video/mp4,video/webm,video/ogg" # 允许的文件类型（MIME类型，逗号分隔）
-RATE_LIMIT_REQUESTS="10" # 速率限制：请求数，例如 10（每分钟）
-RATE_LIMIT_WINDOW_MS="60000" # 速率限制：时间窗口（毫秒），例如 60000 表示1分钟
-UPLOAD_PREFIX="photo" # 上传文件前缀（可选）
----性能调优---：
-EDGE_CACHE_TTL="86400"  # 24小时缓存, 建议设置为1天, 单位毫秒
-IMAGE_OPTIM_QUALITY="85" # 图片优化质量, 建议设置为85
+# 存储配置
+R2_BUCKET_NAME="your-bucket-name"  # R2存储桶名称
+MAX_STORAGE_BYTES="6442450944"  # 最大存储空间(6GB)
+MAX_FILE_SIZE_BYTES="52428800"  # 单个文件最大大小(50MB)
+
+# 安全限制
+ALLOWED_FILE_TYPES="image/jpeg,image/png,image/gif,image/webp,video/mp4,video/webm,video/ogg"
+RATE_LIMIT_REQUESTS="10"  # 每分钟请求数限制
+RATE_LIMIT_WINDOW_MS="60000"  # 限制窗口(毫秒)
 ```
 
-4. **在 Cloudflare Pages 项目绑定R2和kv空间（可选）：**
-```bash
----必选步骤---：
-变量名称="R2"  # 必须是R2，否则无法绑定存储桶
-R2 存储桶名称="private-photo" # 选择你刚刚创建的存储桶或你想要绑定的存量存储桶名称，不需要同名，例如private-photo
+3. **绑定R2存储桶**
+   - 在 Pages 项目设置中
+   - 添加绑定: 变量名 `R2`, 选择你的R2存储桶
 
----可选步骤---：
-变量名称="RATE_LIMIT_KV"  # 速率限制KV命名空间
-KV 命名空间="private-photo" # 选择你刚刚创建的KV命名空间或你想要绑定的存量KV命名空间名称，不需要同名，例如private-photo
+4. **部署验证**
+```bash
+# 检查部署状态
+curl -I https://your-project.pages.dev/api/health
+
+# 测试上传 (需要先获取JWT令牌)
+curl -X POST -H "Authorization: Bearer YOUR_JWT" -F "file=@test.jpg" https://your-project.pages.dev/api/upload
 ```
 
-5. **如需本地本地开发**
+#### 3. 本地开发
+
 ```bash
-# 进入前端目录
-cd frontend
-   
 # 安装依赖
-npm install
-   
-# 本地开发
+cd frontend && npm install
+
+# 开发模式 (需要配置.env.local)
 npm run dev
-   
-# 构建项目
+
+# 生产构建
 npm run build
 ```
 
-#### 配置说明
+**图标说明**：
+- ✅ 表示必填变量 (部署时必须配置)
+- ❌ 表示可选变量 (有默认值或可不配置)
 
-前端通过 [/api/*](file:///Users/mouren/Downloads/gpt-private-photo/v2/functions/api/list.ts) 路径访问后端函数，Cloudflare Pages 会自动将这些请求路由到 `functions/api/` 目录下的函数。
+### 常见问题
 
-### 方案二：Cloudflare Workers（可选）
+**Q: 如何生成安全的JWT_SECRET?**
+```bash
+# Linux/Mac
+openssl rand -base64 32
 
-如果你更倾向于使用纯 Workers 方案，可以按以下方式部署：
+# Windows PowerShell
+[Convert]::ToBase64String((1..32 | ForEach-Object { Get-Random -Minimum 0 -Maximum 255 }))
+```
 
-#### 环境要求
-- Cloudflare 账户
-- R2 存储桶
-- 自定义域名（可选）
+**Q: 上传文件失败?**
+- 检查R2存储桶权限
+- 验证文件类型和大小限制
+- 检查JWT令牌是否有效
 
-#### 部署步骤
-
-1. **创建 R2 存储桶**
-   ```bash
-   # 在 Cloudflare 控制台创建名为 private-photo 的 R2 存储桶
-   ```
-
-2. **修改 wrangler.toml**
-   ```toml
-   name = "private-photo"
-   compatibility_date = "2024-08-01"
-   main = "src/index.ts"
-   
-   [vars]
-   USERNAME = "your-username"
-   PASSWORD = "your-password"
-   MAX_STORAGE_BYTES = 6442450944
-   MAX_FILE_SIZE_BYTES = 52428800
-   ALLOWED_FILE_TYPES = "image/jpeg,image/png,image/gif,image/webp,video/mp4,video/webm,video/ogg"
-   RATE_LIMIT_REQUESTS = 10
-   RATE_LIMIT_WINDOW_MS = 60000
-   UPLOAD_PREFIX = ""
-   
-   [[r2_buckets]]
-   binding = "R2"
-   bucket_name = "private-photo"
-   
-   [[kv_namespaces]]
-   binding = "RATE_LIMIT_KV"
-   id = "your-kv-namespace-id" # 可选，用于速率限制
-   ```
-
-3. **创建 Workers 入口文件**
-   创建 `src/index.ts` 文件整合所有函数逻辑
-
-4. **部署 Workers**
-   ```bash
-   # 安装 Wrangler CLI
-   npm install -g wrangler
-   
-   # 登录 Cloudflare
-   wrangler login
-   
-   # 部署到 Cloudflare Workers
-   wrangler deploy
-   ```
-
-5. **配置路由**
-   在 Cloudflare 控制台为 Workers 配置自定义域名路由
-
-#### Workers 方案优缺点
-
-**优点**：
-- 更细粒度的控制
-- 可以自定义更多中间件逻辑
-- 更适合复杂业务逻辑
-
-**缺点**：
-- 配置更复杂
-- 需要手动处理路由
-- 需要额外配置静态资源托管
+**Q: 如何监控存储使用情况?**
+- 在Cloudflare控制台查看R2指标
+- 设置存储警报阈值
 
 ## 性能优化
 
