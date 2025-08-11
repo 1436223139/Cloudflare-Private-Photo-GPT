@@ -1,0 +1,39 @@
+# Cloudflare Wrangler and secrets
+.dev.vars
+.wrangler
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Dependencies
+node_modules/
+/frontend/node_modules/
+/functions/node_modules/
+
+# Build outputs
+/dist/
+/frontend/dist/
+/build/
+/frontend/build/
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Typescript cache
+*.tsbuildinfo
